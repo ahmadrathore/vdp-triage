@@ -1,0 +1,1 @@
+Synthetic exercise: An unauthenticated remote caller can read all simulated records from a lab service without user interaction or special conditions. The service cannot modify records or interrupt availability. Impact stays within the same security authority.
