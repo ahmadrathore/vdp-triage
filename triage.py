@@ -21,7 +21,15 @@ def main():
                   "vector only if all eight metrics are supported. Return JSON with "
                   "string fields vector and rationale. Use an empty vector if uncertain.\n"
                   + args.report.read_text(encoding="utf-8"))
-        payload = dict(model=args.model, prompt=prompt, stream=False, format="json")
+        payload = dict(model=args.model, prompt=prompt, stream=False, format={
+            "type": "object",
+            "properties": {
+                "vector": {"type": "string", "pattern":
+                    r"^(CVSS:3\.1/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH])?$"},
+                "rationale": {"type": "string"}
+            },
+            "required": ["vector", "rationale"]
+        }, options={"temperature": 0})
         request = urllib.request.Request("http://127.0.0.1:11434/api/generate",
                                          data=json.dumps(payload).encode(),
                                          headers={"Content-Type": "application/json"})
