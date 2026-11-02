@@ -1,6 +1,8 @@
 """Review a suggested CVSS vector, optionally using a local Ollama model."""
 import argparse
 import json
+import sys
+from urllib.error import URLError
 from pathlib import Path
 import urllib.request
 from cvss_service import calculate
@@ -11,6 +13,7 @@ def main():
     inputs.add_argument("--vector")
     inputs.add_argument("--report", type=Path)
     parser.add_argument("--model", default="llama3.2")
+    parser.add_argument("--review-vector", help="Analyst's alternative CVSS v3.1 vector")
     args = parser.parse_args()
     vector = args.vector
     if args.report:
@@ -29,7 +32,19 @@ def main():
         if not vector:
             print("Insufficient evidence. Refer to analyst.")
             return
-    print(json.dumps(calculate(vector), indent=2))
+    suggested = calculate(vector)
+    print(json.dumps(suggested, indent=2))
+    if args.review_vector:
+        reviewed = calculate(args.review_vector)
+        print("Analyst comparison")
+        for key, old in suggested["metrics"].items():
+            new = reviewed["metrics"][key]
+            if old != new:
+                print(f"{key}: {old} -> {new}")
+        print(f"Base score: {suggested['score']} -> {reviewed['score']}")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (ValueError, OSError, URLError, KeyError, TypeError, AttributeError) as exc:
+        sys.exit(f"Assessment failed: {exc}")
